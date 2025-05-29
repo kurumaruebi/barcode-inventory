@@ -1,0 +1,49 @@
+name: Claude Code
+
+on:
+  issues:
+    types: [opened, assigned]
+  issue_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, '@claude') || github.event_name == 'issues' || github.event_name == 'pull_request_review'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run Claude Code
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Extract prompt from comment or issue body
+          if [[ "${{ github.event_name }}" == "issue_comment" ]]; then
+            PROMPT="${{ github.event.comment.body }}"
+          elif [[ "${{ github.event_name }}" == "issues" ]]; then
+            PROMPT="${{ github.event.issue.body }}"
+          elif [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
+            PROMPT="${{ github.event.review.body }}"
+          fi
+          
+          # Remove @claude mention from prompt
+          PROMPT=$(echo "$PROMPT" | sed 's/@claude//g')
+          
+          # Run Claude Code with the prompt
+          echo "$PROMPT" | claude-code --print --allow-tools Bash,Glob,Grep,LS,Read,Edit,MultiEdit,Write
