@@ -13,6 +13,10 @@ on:
 jobs:
   claude:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     if: contains(github.event.comment.body, '@claude') || github.event_name == 'issues' || github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
     
     steps:
