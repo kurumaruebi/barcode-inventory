@@ -27,7 +27,23 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude Code Base Action
-        uses: anthropics/claude-code-action@beta
+        uses: grll/claude-code-base-action@beta
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            あなたはNext.jsとTypeScriptを使ったバーコード在庫管理システムの開発を支援するAIアシスタントです。
+            
+            ${{ github.event_name == 'issue_comment' && github.event.comment.body || github.event_name == 'issues' && github.event.issue.body || github.event_name == 'pull_request' && github.event.pull_request.body || github.event_name == 'pull_request_review' && github.event.review.body }}
+            
+            以下の指針に従ってください：
+            - コードの品質と保守性を重視する
+            - TypeScriptの型安全性を活用する
+            - Next.js 15とReact 19の新機能を適切に使用する
+            - Tailwind CSSでレスポンシブデザインを実装する
+            - バーコードスキャン機能の改善に集中する
+            
+            必要に応じてコードの変更、バグ修正、機能追加を行ってください。
+          use_oauth: "true"
+          claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
+          claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
+          claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+          allowed_tools: "Bash,Glob,Grep,LS,Read,Edit,MultiEdit,Write"
