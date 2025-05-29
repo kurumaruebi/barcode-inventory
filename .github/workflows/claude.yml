@@ -1,17 +1,19 @@
-name: Claude Code
+name: Claude Code Base Action
 
 on:
   issues:
     types: [opened, assigned]
   issue_comment:
     types: [created]
+  pull_request:
+    types: [opened, synchronize]
   pull_request_review:
     types: [submitted]
 
 jobs:
   claude:
     runs-on: ubuntu-latest
-    if: contains(github.event.comment.body, '@claude') || github.event_name == 'issues' || github.event_name == 'pull_request_review'
+    if: contains(github.event.comment.body, '@claude') || github.event_name == 'issues' || github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
     
     steps:
       - name: Checkout repository
@@ -20,30 +22,25 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Run Claude Code Base Action
+        uses: grll/claude-code-base-action@beta
         with:
-          node-version: '18'
-
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-
-      - name: Run Claude Code
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Extract prompt from comment or issue body
-          if [[ "${{ github.event_name }}" == "issue_comment" ]]; then
-            PROMPT="${{ github.event.comment.body }}"
-          elif [[ "${{ github.event_name }}" == "issues" ]]; then
-            PROMPT="${{ github.event.issue.body }}"
-          elif [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
-            PROMPT="${{ github.event.review.body }}"
-          fi
-          
-          # Remove @claude mention from prompt
-          PROMPT=$(echo "$PROMPT" | sed 's/@claude//g')
-          
-          # Run Claude Code with the prompt
-          echo "$PROMPT" | claude-code --print --allow-tools Bash,Glob,Grep,LS,Read,Edit,MultiEdit,Write
+          prompt: |
+            あなたはNext.jsとTypeScriptを使ったバーコード在庫管理システムの開発を支援するAIアシスタントです。
+            
+            ${{ github.event_name == 'issue_comment' && github.event.comment.body || github.event_name == 'issues' && github.event.issue.body || github.event_name == 'pull_request' && github.event.pull_request.body || github.event_name == 'pull_request_review' && github.event.review.body }}
+            
+            以下の指針に従ってください：
+            - コードの品質と保守性を重視する
+            - TypeScriptの型安全性を活用する
+            - Next.js 15とReact 19の新機能を適切に使用する
+            - Tailwind CSSでレスポンシブデザインを実装する
+            - バーコードスキャン機能の改善に集中する
+            
+            必要に応じてコードの変更、バグ修正、機能追加を行ってください。
+          use_oauth: "true"
+          claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
+          claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
+          claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_tools: "Bash,Glob,Grep,LS,Read,Edit,MultiEdit,Write"
